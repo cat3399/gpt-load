@@ -24,7 +24,7 @@ type ChannelProxy interface {
 	GetStreamClient() *http.Client
 
 	// ModifyRequest allows the channel to add specific headers or modify the request
-	ModifyRequest(req *http.Request, apiKey *models.APIKey, group *models.Group)
+	ModifyRequest(req *http.Request, apiKey *models.APIKey, group *models.Group) error
 
 	// IsStreamRequest checks if the request is for a streaming response,
 	IsStreamRequest(c *gin.Context, bodyBytes []byte) bool

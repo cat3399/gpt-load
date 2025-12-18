@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"gpt-load/internal/encryption"
@@ -160,16 +161,55 @@ func (s *KeyService) processAndCreateKeys(
 // ParseKeysFromText parses a string of keys from various formats into a string slice.
 // This function is exported to be shared with the handler layer.
 func (s *KeyService) ParseKeysFromText(text string) []string {
+	trimmedText := strings.TrimSpace(text)
+	if trimmedText == "" {
+		return nil
+	}
+
 	var keys []string
 
 	// First, try to parse as a JSON array of strings
-	if json.Unmarshal([]byte(text), &keys) == nil && len(keys) > 0 {
+	if json.Unmarshal([]byte(trimmedText), &keys) == nil && len(keys) > 0 {
 		return s.filterValidKeys(keys)
+	}
+
+	// Support importing a single JSON object (e.g. GCP service account credentials) as one key.
+	if strings.HasPrefix(trimmedText, "{") {
+		var obj map[string]any
+		if json.Unmarshal([]byte(trimmedText), &obj) == nil && len(obj) > 0 {
+			var compacted bytes.Buffer
+			if err := json.Compact(&compacted, []byte(trimmedText)); err == nil {
+				return s.filterValidKeys([]string{compacted.String()})
+			}
+			return s.filterValidKeys([]string{trimmedText})
+		}
+	}
+
+	// Support importing a JSON array of objects, one object per key.
+	if strings.HasPrefix(trimmedText, "[") {
+		var rawMessages []json.RawMessage
+		if json.Unmarshal([]byte(trimmedText), &rawMessages) == nil && len(rawMessages) > 0 {
+			objKeys := make([]string, 0, len(rawMessages))
+			for _, raw := range rawMessages {
+				rawTrimmed := bytes.TrimSpace(raw)
+				if len(rawTrimmed) == 0 || rawTrimmed[0] != '{' {
+					continue
+				}
+				var compacted bytes.Buffer
+				if err := json.Compact(&compacted, rawTrimmed); err != nil {
+					continue
+				}
+				objKeys = append(objKeys, compacted.String())
+			}
+			if len(objKeys) > 0 {
+				return s.filterValidKeys(objKeys)
+			}
+		}
 	}
 
 	// 通用解析：通过分隔符分割文本，不使用复杂的正则表达式
 	delimiters := regexp.MustCompile(`[\s,;\n\r\t]+`)
-	splitKeys := delimiters.Split(strings.TrimSpace(text), -1)
+	splitKeys := delimiters.Split(trimmedText, -1)
 
 	for _, key := range splitKeys {
 		key = strings.TrimSpace(key)

@@ -2,7 +2,7 @@
 import { keysApi } from "@/api/keys";
 import { settingsApi } from "@/api/settings";
 import ProxyKeysInput from "@/components/common/ProxyKeysInput.vue";
-import type { Group, GroupConfigOption, UpstreamInfo } from "@/types/models";
+import type { ChannelType, Group, GroupConfigOption, UpstreamInfo } from "@/types/models";
 import { Add, Close, HelpCircleOutline, Remove } from "@vicons/ionicons5";
 import {
   NButton,
@@ -67,7 +67,7 @@ interface GroupFormData {
   display_name: string;
   description: string;
   upstreams: UpstreamInfo[];
-  channel_type: "anthropic" | "gemini" | "openai";
+  channel_type: ChannelType;
   sort: number;
   test_model: string;
   validation_endpoint: string;
@@ -124,6 +124,8 @@ const testModelPlaceholder = computed(() => {
       return "gpt-4.1-nano";
     case "gemini":
       return "gemini-2.0-flash-lite";
+    case "vertex_gemini":
+      return "gemini-3-flash-preview";
     case "anthropic":
       return "claude-3-haiku-20240307";
     default:
@@ -137,6 +139,8 @@ const upstreamPlaceholder = computed(() => {
       return "https://api.openai.com";
     case "gemini":
       return "https://generativelanguage.googleapis.com";
+    case "vertex_gemini":
+      return "https://us-central1-aiplatform.googleapis.com";
     case "anthropic":
       return "https://api.anthropic.com";
     default:
@@ -151,6 +155,7 @@ const validationEndpointPlaceholder = computed(() => {
     case "anthropic":
       return "/v1/messages";
     case "gemini":
+    case "vertex_gemini":
       return ""; // Gemini 不显示此字段
     default:
       return t("keys.enterValidationPath");
@@ -249,6 +254,8 @@ function getOldDefaultTestModel(channelType: string): string {
       return "gpt-4.1-nano";
     case "gemini":
       return "gemini-2.0-flash-lite";
+    case "vertex_gemini":
+      return "gemini-3-flash-preview";
     case "anthropic":
       return "claude-3-haiku-20240307";
     default:
@@ -262,6 +269,8 @@ function getOldDefaultUpstream(channelType: string): string {
       return "https://api.openai.com";
     case "gemini":
       return "https://generativelanguage.googleapis.com";
+    case "vertex_gemini":
+      return "https://us-central1-aiplatform.googleapis.com";
     case "anthropic":
       return "https://api.anthropic.com";
     default:
@@ -687,7 +696,7 @@ async function handleSubmit() {
               :label="t('keys.testPath')"
               path="validation_endpoint"
               class="form-item-half"
-              v-if="formData.channel_type !== 'gemini'"
+              v-if="formData.channel_type !== 'gemini' && formData.channel_type !== 'vertex_gemini'"
             >
               <template #label>
                 <div class="form-label-with-tooltip">

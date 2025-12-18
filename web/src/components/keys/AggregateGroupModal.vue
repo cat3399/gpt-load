@@ -44,6 +44,7 @@ const formRef = ref();
 const channelTypeOptions = [
   { label: "OpenAI", value: "openai" as ChannelType },
   { label: "Gemini", value: "gemini" as ChannelType },
+  { label: "Vertex Gemini", value: "vertex_gemini" as ChannelType },
   { label: "Anthropic", value: "anthropic" as ChannelType },
 ];
 

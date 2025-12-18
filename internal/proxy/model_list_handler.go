@@ -18,10 +18,13 @@ func shouldInterceptModelList(path string, method string) bool {
 		return false
 	}
 
+	trimmedPath := strings.TrimRight(path, "/")
+
 	// Check various model list endpoints
-	return strings.HasSuffix(path, "/v1/models") ||
-		strings.HasSuffix(path, "/v1beta/models") ||
-		strings.Contains(path, "/v1beta/openai/v1/models")
+	return strings.HasSuffix(trimmedPath, "/v1/models") ||
+		strings.HasSuffix(trimmedPath, "/v1beta/models") ||
+		strings.Contains(trimmedPath, "/v1beta/openai/v1/models") ||
+		(strings.HasSuffix(trimmedPath, "/models") && strings.Contains(trimmedPath, "/publishers/google/models"))
 }
 
 // handleModelListResponse processes the model list response and applies filtering based on redirect rules

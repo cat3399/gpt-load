@@ -179,7 +179,29 @@ func (ps *ProxyServer) executeRequestWithRetry(
 		req.ContentLength = int64(len(finalBodyBytes))
 	}
 
-	channelHandler.ModifyRequest(req, apiKey, group)
+	if err := channelHandler.ModifyRequest(req, apiKey, group); err != nil {
+		statusCode := http.StatusInternalServerError
+		parsedError := err.Error()
+
+		// Mark current key as failed and decide whether to retry.
+		ps.keyProvider.UpdateStatus(apiKey, group, false, parsedError)
+
+		isLastAttempt := retryCount >= cfg.MaxRetries
+		requestType := models.RequestTypeRetry
+		if isLastAttempt {
+			requestType = models.RequestTypeFinal
+		}
+
+		ps.logRequest(c, originalGroup, group, apiKey, startTime, statusCode, err, isStream, upstreamURL, channelHandler, bodyBytes, requestType)
+
+		if isLastAttempt {
+			response.Error(c, app_errors.NewAPIErrorWithUpstream(statusCode, "UPSTREAM_ERROR", parsedError))
+			return
+		}
+
+		ps.executeRequestWithRetry(c, channelHandler, originalGroup, group, bodyBytes, isStream, startTime, retryCount+1)
+		return
+	}
 
 	// Apply custom header rules
 	if len(group.HeaderRuleList) > 0 {

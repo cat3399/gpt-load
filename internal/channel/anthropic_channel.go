@@ -36,9 +36,10 @@ func newAnthropicChannel(f *Factory, group *models.Group) (ChannelProxy, error) 
 }
 
 // ModifyRequest sets the required headers for the Anthropic API.
-func (ch *AnthropicChannel) ModifyRequest(req *http.Request, apiKey *models.APIKey, group *models.Group) {
+func (ch *AnthropicChannel) ModifyRequest(req *http.Request, apiKey *models.APIKey, group *models.Group) error {
 	req.Header.Set("x-api-key", apiKey.KeyValue)
 	req.Header.Set("anthropic-version", "2023-06-01")
+	return nil
 }
 
 // IsStreamRequest checks if the request is for a streaming response using the pre-read body.

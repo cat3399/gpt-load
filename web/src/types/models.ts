@@ -12,7 +12,7 @@ export type KeyStatus = "active" | "invalid" | undefined;
 export type GroupType = "standard" | "aggregate";
 
 // 渠道类型
-export type ChannelType = "openai" | "gemini" | "anthropic";
+export type ChannelType = "openai" | "gemini" | "anthropic" | "vertex_gemini";
 
 // 数据模型定义
 export interface APIKey {
